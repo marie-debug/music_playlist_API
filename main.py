@@ -1,14 +1,26 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy 
 import os
+from flask_marshmallow import Marshmallow
+
 
 app = Flask(__name__)
+ma = Marshmallow(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"]=os.environ['DATABASE_URL']
 
 db = SQLAlchemy(app)
 
 
+class UserSchema(ma.Schema):
+    class Meta:
+        # Fields to expose
+        fields = ("id", "firstname", "lastname", "email", "is_admin")
+
+#single card schema, when one card needs to be retrieved
+# user_schema = UserSchema()
+#multiple card schema, when many cards need to be retrieved
+user_schema = UserSchema(many=True)
 
 
 class User(db.Model):
@@ -27,7 +39,7 @@ class User(db.Model):
 def seed_db():
     users = [
         User(
-            firstname= 'marion',
+            firstname = 'marion',
             lastname = 'akinyi',
             email='admin@spam.com',
             password='foobar231',
@@ -49,3 +61,16 @@ def create_db():
 def drop_db():
     db.drop_all()
     print("Tables dropped") 
+
+
+
+
+@app.route("/users", methods=["GET"])
+def get_user():
+    # get all the users from the database table
+
+    statement= db.select(User)
+    print (statement)
+    user_list= db.session.scalars(statement)
+    print(user_list)
+    return UserSchema(many=True).dump(user_list)
