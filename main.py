@@ -1,17 +1,22 @@
-from flask import Flask,request
+from flask import Flask,request,abort
 from flask_sqlalchemy import SQLAlchemy 
 import os
 from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
-import json
+from datetime import timedelta
+from flask_jwt_extended import create_access_token,jwt_required,JWTManager
 
 
 
 app = Flask(__name__)
 ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
+
 
 app.config["SQLALCHEMY_DATABASE_URI"]=os.environ['DATABASE_URL']
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+
 
 db = SQLAlchemy(app)
 
@@ -96,3 +101,17 @@ def auth_register():
     #Return the user to check the request was successful
     return UserSchema(exclude=['password']).dump(user), 201
  
+
+# user login
+@app.route('/login/', methods=['POST'])
+def auth_login():
+    # Find a user by email address
+    stmt = db.select(User).filter_by(email=request.json['email'])
+    user = db.session.scalar(stmt)
+    # If user exists and password is correct
+    if user and bcrypt.check_password_hash(user.password, request.json['password']):
+        token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=1))
+        return {'email': user.email, 'token': token}
+
+    else:
+        return abort(401, description="Incorrect username and password")
