@@ -1,11 +1,15 @@
-from flask import Flask
+from flask import Flask,request
 from flask_sqlalchemy import SQLAlchemy 
 import os
 from flask_marshmallow import Marshmallow
+from flask_bcrypt import Bcrypt
+import json
+
 
 
 app = Flask(__name__)
 ma = Marshmallow(app)
+bcrypt = Bcrypt(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"]=os.environ['DATABASE_URL']
 
@@ -15,7 +19,7 @@ db = SQLAlchemy(app)
 class UserSchema(ma.Schema):
     class Meta:
         # Fields to expose
-        fields = ("id", "firstname", "lastname", "email", "is_admin")
+        fields = ("id", "firstname", "lastname", "email", "is_admin", "password")
 
 #single card schema, when one card needs to be retrieved
 # user_schema = UserSchema()
@@ -42,7 +46,7 @@ def seed_db():
             firstname = 'marion',
             lastname = 'akinyi',
             email='admin@spam.com',
-            password='foobar231',
+            password=bcrypt.generate_password_hash('foobar231').decode("utf-8"),
             is_admin=True
         )
     ]
@@ -65,7 +69,7 @@ def drop_db():
 
 
 
-@app.route("/users", methods=["GET"])
+@app.route("/users/", methods=["GET"])
 def get_user():
     # get all the users from the database table
 
@@ -74,3 +78,21 @@ def get_user():
     user_list= db.session.scalars(statement)
     print(user_list)
     return UserSchema(many=True).dump(user_list)
+
+
+#register new users
+@app.route("/auth/register/", methods=["POST"])
+def auth_register():
+
+    user_fields = request.json
+    print(user_fields)
+    user = User()
+    user.firstname = user_fields["firstname"]
+    user.lastname = user_fields["lastname"]
+    user.email = user_fields["email"]
+    user.password = bcrypt.generate_password_hash(user_fields["password"]).decode("utf-8")
+    db.session.add(user)
+    db.session.commit()
+    #Return the user to check the request was successful
+    return UserSchema(exclude=['password']).dump(user), 201
+ 
