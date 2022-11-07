@@ -3,7 +3,8 @@ from init import db, ma,bcrypt
 from models.user import User,UserSchema
 from flask_jwt_extended import create_access_token,jwt_required,get_jwt_identity
 from datetime import timedelta
-
+from models.playlist import Playlist,PlaylistSchema
+from datetime import date
 
 
 
@@ -57,3 +58,5 @@ def auth_login():
 
     else:
         return abort(401, description="Incorrect username and password")
+
+
