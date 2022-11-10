@@ -1,11 +1,12 @@
 from init import db, ma
 
-class UserSchema(ma.Schema):
-    
-   class Meta:
-        # Fields to expose
-        fields = ("id", "firstname", "lastname", "email", "is_admin", "password")
 
+class UserSchema(ma.Schema):
+
+    class Meta:
+        # Fields to expose
+        fields = ("id", "firstname", "lastname",
+                  "email", "is_admin", "password")
 
 
 class User(db.Model):
@@ -18,7 +19,4 @@ class User(db.Model):
     password = db.Column(db.String, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
-    playlists= db.relationship("Playlist",back_populates="user")
-  
-
-
+    playlists = db.relationship("Playlist", back_populates="user")

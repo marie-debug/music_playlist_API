@@ -14,6 +14,7 @@ def create_db():
     db.create_all()
     print("Tables created")
 
+
 @db_commands.cli.command('drop')
 def drop_db():
     db.drop_all()
@@ -36,24 +37,13 @@ def seed_db():
     db.session.add_all(users)
     db.session.commit()
 
-    songs = [
-        Song(
-            name='test_song',
-            genre='test_genre'
-        
-        )
-
-    ]
-
-    db.session.add_all(songs)
-    db.session.commit()
-
     playlists = [
         Playlist(
 
             playlist_name='test_playlist',
             creation_date=date.today(),
-            user = users[0]
+            user=users[0]
+
 
         )
 
@@ -62,5 +52,15 @@ def seed_db():
     db.session.add_all(playlists)
     db.session.commit()
 
-    print('Tables seeded')
+    songs = [
+        Song(
+            name='test_song',
+            genre='test_genre',
+            playlist_id=1
+        )
 
+    ]
+
+    db.session.add_all(songs)
+    db.session.commit()
+    print('Tables seeded')
