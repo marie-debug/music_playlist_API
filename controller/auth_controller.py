@@ -1,10 +1,8 @@
 from flask import Blueprint, request,abort
-from init import db, ma,bcrypt 
+from init import db,bcrypt 
 from models.user import User,UserSchema
 from flask_jwt_extended import create_access_token,jwt_required,get_jwt_identity
 from datetime import timedelta
-from models.playlist import Playlist,PlaylistSchema
-from datetime import date
 
 
 
@@ -15,17 +13,12 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 @auth_bp.route("/users/", methods=["GET"])
 @jwt_required()
 def get_user():
-    current_user_id= get_jwt_identity()
-    statement= db.select(User).filter_by(id=current_user_id)
-    user_scalar= db.session.scalar(statement)
-    user= UserSchema().dump(user_scalar)
-    print(user)
-    if not user['is_admin']:
-        abort(401)
+    is_admin()
 
     statement= db.select(User)
+    
     user_scalar_list= db.session.scalars(statement)
-
+    
     return UserSchema(many=True).dump(user_scalar_list)
     
 
@@ -60,3 +53,16 @@ def auth_login():
         return abort(401, description="Incorrect username and password")
 
 
+def is_admin():
+    user = is_user_logged_in()
+    if not user.is_admin:
+        abort(401)
+
+def is_user_logged_in():
+    current_user_id= get_jwt_identity()
+    statement= db.select(User).filter_by(id=current_user_id)
+    user = db.session.scalar(statement)
+    if not user:
+        abort(401)
+    return user
+   

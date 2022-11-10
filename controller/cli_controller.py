@@ -40,6 +40,7 @@ def seed_db():
         Song(
             name='test_song',
             genre='test_genre'
+        
         )
 
     ]
@@ -51,7 +52,8 @@ def seed_db():
         Playlist(
 
             playlist_name='test_playlist',
-            creation_date=date.today()
+            creation_date=date.today(),
+            user = users[0]
 
         )
 
