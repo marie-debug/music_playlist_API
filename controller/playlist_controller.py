@@ -6,7 +6,6 @@ from models.song import Song
 from datetime import date
 from controller.auth_controller import is_user_logged_in
 
-
 playlist_bp = Blueprint('playlist', __name__, url_prefix='/playlist')
 
 
@@ -36,20 +35,69 @@ def create_playlist():
     # adds plalist fields into the db
     db.session.add(playlist)
     db.session.commit()
-    return {"name": playlist.playlist_name, "Date_Created": playlist.creation_date}
+    return {"name": playlist.playlist_name, "Date_Created": playlist.creation_date, "playlist_name": playlist.id}
 
 
-@playlist_bp.route("/songs", methods=["POST"])
+#creates a new song in a given playlist
+@playlist_bp.route("/<int:playlist_id>/songs/", methods=["POST"])
 @jwt_required()
-def create_song():
-    current_user = get_jwt_identity()
-    song_fields = request.json
+def create_song(playlist_id):
+        is_user_logged_in()
+        # selects playlist from db based on playlist id
+        stmt = db.select(Playlist).filter_by(id=playlist_id)
+        playlist = db.session.scalar(stmt)
+        print(playlist)
+        song_fields = request.json
 
-    song = Song()
-    song.genre = song_fields["genre"]
-    song.name = song_fields["name"]
-    song.playlist_id = current_user
-    # adds songs into the db
-    db.session.add(song)
-    db.session.commit()
-    return {"name": song.name, "genre": song.genre}
+        if playlist:
+            song = Song()
+            song.genre = song_fields["genre"]
+            song.name = song_fields["name"]
+            song.playlist_id = playlist.id
+            # adds songs fields into the db
+            db.session.add(song)
+            db.session.commit()
+            return {"name": song.name, "genre": song.genre, "playlist": playlist.playlist_name}
+        return {'error': f'playlist not found with id {playlist_id}'}, 500
+
+
+# deletes a song from the database
+@playlist_bp.route("/<int:playlist_id>/songs/<int:song_id>/", methods=['DELETE'])
+@jwt_required()
+def delete_song(playlist_id,song_id):
+        is_user_logged_in()
+        # select playlist from database
+        stmt = db.select(Playlist).filter_by(id=playlist_id)
+        playlist = db.session.scalar(stmt)
+
+        # select song from database 
+        stmt = db.select(Song).filter_by(id=song_id)
+        song = db.session.scalar(stmt)
+
+        if song and playlist:
+            db.session.delete(song)
+            db.session.commit()
+            return {'message': f"Song '{song.name}' deleted successfully"}
+        else:
+            return {'error': f'Song not found with id {id}'}, 404
+
+
+
+
+@playlist_bp.route("/<int:id>/", methods=['DELETE'])
+@jwt_required()
+def delete_playlist(id):
+    user = is_user_logged_in()
+    current_user_id = user.id
+    # gets playlist from db filtered by the user name and the playlist id
+    stmt = db.select(Playlist).filter_by(user_id=current_user_id, id=id)
+    playlist = db.session.scalar(stmt)
+    if playlist:
+        db.session.delete(playlist)
+        db.session.commit()
+        return {'message': f"Playlist '{playlist.playlist_name}' deleted successfully"}
+    else:
+        return {'error': f'playlist not found with id {id}'}, 404
+
+
+

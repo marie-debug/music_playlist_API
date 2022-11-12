@@ -25,17 +25,22 @@ def get_user():
 @auth_bp.route("/register/", methods=["POST"])
 def auth_register():
 
-    user_fields = request.json
-    user = User()
-    user.firstname = user_fields["firstname"]
-    user.lastname = user_fields["lastname"]
-    user.email = user_fields["email"]
-    user.password = bcrypt.generate_password_hash(
-        user_fields["password"]).decode("utf-8")
-    # adds users infomation in db
-    db.session.add(user)
-    db.session.commit()
-    return UserSchema(exclude=['password']).dump(user), 201
+    try:
+        user_fields = request.json
+        user = User()
+        user.firstname = user_fields["firstname"]
+        user.lastname = user_fields["lastname"]
+        user.email = user_fields["email"]
+        user.password = bcrypt.generate_password_hash(
+            user_fields["password"]).decode("utf-8")
+        # adds users infomation in db
+        db.session.add(user)
+        db.session.commit()      
+        
+        return UserSchema().dump(user), 201
+    except KeyError:
+        return {'error': 'Email address, firstname and lastname are required'}, 400
+
 
 
 # user login
@@ -51,7 +56,7 @@ def auth_login():
         return {'email': user.email, 'token': token}
 
     else:
-        return abort(401, description="Incorrect username and password")
+        return abort(401, description = "Login Unsuccessful, Please check password and Username")
 
 
 def is_admin():
@@ -65,5 +70,5 @@ def is_user_logged_in():
     statement = db.select(User).filter_by(id=current_user_id)
     user = db.session.scalar(statement)
     if not user:
-        abort(401)
+        abort(401, description = "User not logged in")
     return user

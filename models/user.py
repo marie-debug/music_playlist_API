@@ -1,12 +1,15 @@
 from init import db, ma
-
+from flask_marshmallow import fields
+from marshmallow import  fields, validate
 
 class UserSchema(ma.Schema):
 
     class Meta:
-        # Fields to expose
-        fields = ("id", "firstname", "lastname",
-                  "email", "is_admin", "password")
+
+        email = fields.Email()
+        firstname = fields.Str(required=True,validate=validate.Length(min=1),error_messages={"required": "firstname is required."})
+        lastname = fields.Str(required=True,validate=validate.Length(min=1),error_messages={"required": "firstname is required."})
+        password = fields.Str(required=True, allow_none=True)
 
 
 class User(db.Model):
