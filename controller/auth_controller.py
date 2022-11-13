@@ -3,7 +3,7 @@ from init import db, bcrypt
 from models.user import User, UserSchema
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
-
+from sqlalchemy.exc import IntegrityError
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -25,7 +25,7 @@ def get_user():
 @auth_bp.route("/register/", methods=["POST"])
 def auth_register():
 
-
+    try:
         user_fields = request.json
         user = User()
         user.firstname = user_fields["firstname"]
@@ -33,15 +33,13 @@ def auth_register():
         user.email = user_fields["email"]
         user.password = bcrypt.generate_password_hash(
             user_fields["password"]).decode("utf-8")
-        # checks if email address exists in database
-        email_exists= db.session.query(User).filter(User.email == user_fields["email"])
-        if email_exists:
-            return {'error': 'Email already exists'}
+
         # adds users infomation in db 
         db.session.add(user)
         db.session.commit()  
-        return UserSchema().dump(user), 201
-  
+        return UserSchema(exclude=['password']).dump(user), 201
+    except IntegrityError:
+        return {'error': 'Email address already in use'}, 409
 
 # user login
 @auth_bp.route('/login/', methods=['POST'])
@@ -57,18 +55,20 @@ def auth_login():
         return {'email': user.email, 'token': token}
 
     else:
-        return abort(500, description = "Login Unsuccessful, Please check password and Username")
+        return abort(401, description = "Login Unsuccessful, Please check password and Username")
 
 
+#checks if user is admin
 def is_admin():
     user = is_user_logged_in()
     if not user.is_admin:
         abort(401)
 
-
+#checks if user is logged in and returns user
 def is_user_logged_in():
     print('here')
     current_user_id = get_jwt_identity()
+    #selects user by id from db
     statement = db.select(User).filter_by(id=current_user_id)
     user = db.session.scalar(statement)
     if not user:

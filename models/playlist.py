@@ -4,7 +4,7 @@ from marshmallow import fields
 
 class PlaylistSchema(ma.Schema):
 
-    songs = fields.List(fields.Nested('SongSchema'))
+    songs = fields.List(fields.Nested('SongSchema',only=['genre', 'name']))
 
     class Meta:
         fields = ("id", "name", "creation_date", "user_id", "songs")

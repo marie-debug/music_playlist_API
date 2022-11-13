@@ -18,7 +18,10 @@ def get_playlists():
 # selects playlist from db and filters by the user id
     statement = db.select(Playlist).filter_by(user_id=current_user_id)
     playlists = db.session.scalars(statement)
-    return PlaylistSchema(many=True).dump(playlists)
+    result = PlaylistSchema(many=True).dump(playlists)
+    if len(result) >= 1:
+        return result
+    return {'error': f'please create playlist for {user.firstname}'},500
 
 
 
@@ -46,12 +49,12 @@ def create_playlist():
 
     playlist = Playlist()
     playlist.creation_date = date.today()
-    playlist.name = playlist_fields["playlist_name"]
+    playlist.name = playlist_fields["name"]
     playlist.user_id = current_user
-    # adds plalist fields into the db
+    # adds playlist fields into the db
     db.session.add(playlist)
     db.session.commit()
-    return {"name": playlist.playlist_name, "Date_Created": playlist.creation_date, "playlist_name": playlist.id}
+    return PlaylistSchema().dump(playlist), 201
 
 
 #creates a new song in a given playlist
