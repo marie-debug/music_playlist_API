@@ -1,11 +1,12 @@
 from init import db, ma
 from marshmallow import fields
-
+from helpers import validate
 
 class PlaylistSchema(ma.Schema):
 
     songs = fields.List(fields.Nested('SongSchema',only=['genre', 'name']))
 
+    name = validate(3,100,'name')
     class Meta:
         fields = ("id", "name", "creation_date", "user_id", "songs")
         ordered = True

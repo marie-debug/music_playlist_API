@@ -1,18 +1,20 @@
 from init import db, ma
-from flask_marshmallow import fields
-from marshmallow import  fields, validate
+from marshmallow import fields
+from helpers import validate
+
 
 class UserSchema(ma.Schema):
 
+    email = fields.Email()
+   
+    firstname = validate(3,100,'firstname')
+    lastname = validate(3,100,'lastname')
+    password = fields.String(required=True)
+
     class Meta:
-
-        email = fields.Email()
-        firstname = fields.Str(required=True,validate=validate.Length(min=1,max=100),error_messages={"required": "firstname is required."})
-        lastname = fields.Str(required=True,validate=validate.Length(min=1,max=100),error_messages={"required": "firstname is required."})
-        password = fields.Str(required=True, allow_none=True)
-
-
-        fields = ('id', 'firstname','lastname', 'email', 'password', 'is_admin')
+        fields = ('id', 'firstname', 'lastname',
+                  'email', 'password', 'is_admin')
+        ordered = True
 
 
 class User(db.Model):
