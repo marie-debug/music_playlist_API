@@ -12,13 +12,29 @@ playlist_bp = Blueprint('playlist', __name__, url_prefix='/playlist')
 # get user playlists from the database table if logged in
 @playlist_bp.route("/", methods=["GET"])
 @jwt_required()
-def get_playlist():
+def get_playlists():
     user = is_user_logged_in()
     current_user_id = user.id
 # selects playlist from db and filters by the user id
     statement = db.select(Playlist).filter_by(user_id=current_user_id)
     playlists = db.session.scalars(statement)
     return PlaylistSchema(many=True).dump(playlists)
+
+
+
+# get user playlist from the database table if logged in
+@playlist_bp.route("/<int:playlist_id>/'", methods=["GET"])
+@jwt_required()
+def get_playlist(playlist_id):
+        user = is_user_logged_in()
+        if user:
+    # selects playlist from db and filters by the user id
+            statement = db.select(Playlist).filter_by(id = playlist_id)
+            playlist = db.session.scalar(statement)
+            return PlaylistSchema().dump(playlist)
+
+        return {'error': f'playlist not found with id {playlist_id}'}, 500
+
 
 
 # create playlist if logged in
@@ -30,7 +46,7 @@ def create_playlist():
 
     playlist = Playlist()
     playlist.creation_date = date.today()
-    playlist.playlist_name = playlist_fields["playlist_name"]
+    playlist.name = playlist_fields["playlist_name"]
     playlist.user_id = current_user
     # adds plalist fields into the db
     db.session.add(playlist)
@@ -46,7 +62,7 @@ def create_song(playlist_id):
         # selects playlist from db based on playlist id
         stmt = db.select(Playlist).filter_by(id=playlist_id)
         playlist = db.session.scalar(stmt)
-        print(playlist)
+       
         song_fields = request.json
 
         if playlist:
@@ -54,6 +70,7 @@ def create_song(playlist_id):
             song.genre = song_fields["genre"]
             song.name = song_fields["name"]
             song.playlist_id = playlist.id
+
             # adds songs fields into the db
             db.session.add(song)
             db.session.commit()
@@ -82,6 +99,18 @@ def delete_song(playlist_id,song_id):
             return {'error': f'Song not found with id {id}'}, 404
 
 
+@playlist_bp.route('/<int:playlist_id>/', methods=['PUT', 'PATCH'])
+@jwt_required()
+def update_playlist(playlist_id):
+
+    stmt = db.select(Playlist).filter_by(id=playlist_id)
+    playlist = db.session.scalar(stmt)
+    if playlist:
+        playlist.name = request.json.get('name') or playlist.name
+        db.session.commit()      
+        return PlaylistSchema().dump(playlist)
+    else:
+        return {'error': f'playlist not found with id {playlist_id}'}, 404
 
 
 @playlist_bp.route("/<int:id>/", methods=['DELETE'])

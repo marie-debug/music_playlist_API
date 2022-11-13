@@ -14,7 +14,11 @@ def create_app():
 
     @app.errorhandler(ValidationError)
     def validation_error(err):
-        return {'error': err.messages}, 400
+        return {'error': str(err)},500
+
+    @app.errorhandler(500)
+    def server_error(err):
+        return {'error': str(err)},500
 
     @app.errorhandler(400)
     def bad_request(err):

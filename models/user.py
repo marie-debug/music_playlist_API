@@ -7,9 +7,12 @@ class UserSchema(ma.Schema):
     class Meta:
 
         email = fields.Email()
-        firstname = fields.Str(required=True,validate=validate.Length(min=1),error_messages={"required": "firstname is required."})
-        lastname = fields.Str(required=True,validate=validate.Length(min=1),error_messages={"required": "firstname is required."})
+        firstname = fields.Str(required=True,validate=validate.Length(min=1,max=100),error_messages={"required": "firstname is required."})
+        lastname = fields.Str(required=True,validate=validate.Length(min=1,max=100),error_messages={"required": "firstname is required."})
         password = fields.Str(required=True, allow_none=True)
+
+
+        fields = ('id', 'firstname','lastname', 'email', 'password', 'is_admin')
 
 
 class User(db.Model):

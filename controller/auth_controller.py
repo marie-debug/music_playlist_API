@@ -12,20 +12,20 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 @auth_bp.route("/users/", methods=["GET"])
 @jwt_required()
 def get_user():
-    is_admin()
-
+    is_admin()       
+   # gets a list of users from the db
     statement = db.select(User)
-    # gets a list of users from the db
+    print(statement)
     user_scalar_list = db.session.scalars(statement)
-
-    return UserSchema(many=True).dump(user_scalar_list)
+    print(user_scalar_list)
+    return UserSchema(many=True).dump(user_scalar_list) 
 
 
 # register new users
 @auth_bp.route("/register/", methods=["POST"])
 def auth_register():
 
-    try:
+
         user_fields = request.json
         user = User()
         user.firstname = user_fields["firstname"]
@@ -33,15 +33,15 @@ def auth_register():
         user.email = user_fields["email"]
         user.password = bcrypt.generate_password_hash(
             user_fields["password"]).decode("utf-8")
-        # adds users infomation in db
+        # checks if email address exists in database
+        email_exists= db.session.query(User).filter(User.email == user_fields["email"])
+        if email_exists:
+            return {'error': 'Email already exists'}
+        # adds users infomation in db 
         db.session.add(user)
-        db.session.commit()      
-        
+        db.session.commit()  
         return UserSchema().dump(user), 201
-    except KeyError:
-        return {'error': 'Email address, firstname and lastname are required'}, 400
-
-
+  
 
 # user login
 @auth_bp.route('/login/', methods=['POST'])
@@ -53,10 +53,11 @@ def auth_login():
     if user and bcrypt.check_password_hash(user.password, request.json['password']):
         token = create_access_token(identity=str(
             user.id), expires_delta=timedelta(days=1))
+
         return {'email': user.email, 'token': token}
 
     else:
-        return abort(401, description = "Login Unsuccessful, Please check password and Username")
+        return abort(500, description = "Login Unsuccessful, Please check password and Username")
 
 
 def is_admin():
@@ -66,6 +67,7 @@ def is_admin():
 
 
 def is_user_logged_in():
+    print('here')
     current_user_id = get_jwt_identity()
     statement = db.select(User).filter_by(id=current_user_id)
     user = db.session.scalar(statement)
