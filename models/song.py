@@ -2,6 +2,7 @@ from init import db, ma
 
 
 class SongSchema(ma.Schema):
+    
     class Meta:
         # Fields to expose
         fields = ("id", "name", "genre", "playlist_id")

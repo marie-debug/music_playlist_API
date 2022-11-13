@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from init import db
 from models.playlist import Playlist, PlaylistSchema
-from models.song import Song
+from models.song import Song,SongSchema
 from datetime import date
 from controller.auth_controller import is_user_logged_in
 
@@ -77,7 +77,7 @@ def create_song(playlist_id):
             # adds songs fields into the db
             db.session.add(song)
             db.session.commit()
-            return {"name": song.name, "genre": song.genre, "playlist": playlist.playlist_name}
+            return SongSchema().dump(song), 201
         return {'error': f'playlist not found with id {playlist_id}'}, 500
 
 
@@ -86,11 +86,12 @@ def create_song(playlist_id):
 @jwt_required()
 def delete_song(playlist_id,song_id):
         is_user_logged_in()
-        # select playlist from database
+        # select playlist from database by id 
         stmt = db.select(Playlist).filter_by(id=playlist_id)
         playlist = db.session.scalar(stmt)
-
-        # select song from database 
+        if playlist is None:
+            return {'error': f'Playlist not found with id {playlist_id}'}, 404
+        # select song from database by id
         stmt = db.select(Song).filter_by(id=song_id)
         song = db.session.scalar(stmt)
 
@@ -99,7 +100,7 @@ def delete_song(playlist_id,song_id):
             db.session.commit()
             return {'message': f"Song '{song.name}' deleted successfully"}
         else:
-            return {'error': f'Song not found with id {id}'}, 404
+            return {'error': f'Song not found with id {song_id}'}, 404
 
 
 @playlist_bp.route('/<int:playlist_id>/', methods=['PUT', 'PATCH'])
